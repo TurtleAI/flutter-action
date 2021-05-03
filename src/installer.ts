@@ -10,52 +10,52 @@ export async function getFlutter(
   version: string,
   channel: string
 ): Promise<void> {
-  const platform = release.getPlatform();
+  // const platform = release.getPlatform();
   const useMaster = channel == 'master';
 
-  const {
-    version: selected,
-    downloadUrl,
-    channel: validatedChannel
-  } = await release.determineVersion(
-    version,
-    useMaster ? 'dev' : channel,
-    platform
-  );
+  // const {
+  //   version: selected,
+  //   downloadUrl,
+  //   channel: validatedChannel
+  // } = await release.determineVersion(
+  //   version,
+  //   useMaster ? 'dev' : channel,
+  //   platform
+  // );
 
-  if (!useMaster && channel !== validatedChannel) {
-    core.debug(`Channel was identified as ${validatedChannel}`);
-  }
+  // if (!useMaster && channel !== validatedChannel) {
+  //   core.debug(`Channel was identified as ${validatedChannel}`);
+  // }
 
-  let cleanver = useMaster
-    ? channel
-    : `${selected.replace('+', '-')}-${validatedChannel}`;
+  // let cleanver = useMaster
+  //   ? channel
+  //   : `${selected.replace('+', '-')}-${validatedChannel}`;
 
-  let toolPath = tc.find('flutter', cleanver);
+  // let toolPath = tc.find('flutter', cleanver);
 
-  if (toolPath) {
-    core.debug(`Tool found in cache ${toolPath}`);
-  } else {
-    core.debug(`Downloading Flutter from Google storage ${downloadUrl}`);
+  // if (toolPath) {
+  //   core.debug(`Tool found in cache ${toolPath}`);
+  // } else {
+  //   core.debug(`Downloading Flutter from Google storage ${downloadUrl}`);
 
-    const sdkFile = await tc.downloadTool(downloadUrl);
-    const sdkCache = await tmpDir(platform);
-    const sdkDir = await extract(sdkFile, sdkCache, path.basename(downloadUrl));
+  //   const sdkFile = await tc.downloadTool(downloadUrl);
+  //   const sdkCache = await tmpDir(platform);
+  //   const sdkDir = await extract(sdkFile, sdkCache, path.basename(downloadUrl));
 
-    toolPath = await tc.cacheDir(sdkDir, 'flutter', cleanver);
-  }
+  //   toolPath = await tc.cacheDir(sdkDir, 'flutter', cleanver);
+  // }
 
-  core.exportVariable('FLUTTER_ROOT', toolPath);
+  // core.exportVariable('FLUTTER_ROOT', toolPath);
 
   let pubCachePath = process.env['PUB_CACHE'] || '';
 
-  if (!pubCachePath) {
-    pubCachePath = path.join(toolPath, '.pub-cache');
-    core.exportVariable('PUB_CACHE', pubCachePath);
-  }
+  // if (!pubCachePath) {
+  //   pubCachePath = path.join(toolPath, '.pub-cache');
+  //   core.exportVariable('PUB_CACHE', pubCachePath);
+  // }
 
-  core.addPath(path.join(toolPath, 'bin'));
-  core.addPath(path.join(toolPath, 'bin', 'cache', 'dart-sdk', 'bin'));
+  // core.addPath(path.join(toolPath, 'bin'));
+  // core.addPath(path.join(toolPath, 'bin', 'cache', 'dart-sdk', 'bin'));
   core.addPath(path.join(pubCachePath, 'bin'));
 
   if (useMaster && version == '') {
