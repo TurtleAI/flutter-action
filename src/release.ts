@@ -197,3 +197,7 @@ function prefixCompare(version: string, releaseVersion: string): boolean {
 
   return releaseVersion.startsWith(version);
 }
+
+export function isGitCommitHash(maybeHash: string): boolean {
+  return /\b[0-9a-f]{5,40}\b/.test(maybeHash);
+}

@@ -58,9 +58,14 @@ export async function getFlutter(
   core.addPath(path.join(toolPath, 'bin', 'cache', 'dart-sdk', 'bin'));
   core.addPath(path.join(pubCachePath, 'bin'));
 
-  if (useMaster) {
+  if (useMaster && version == '') {
     await exec.exec('flutter', ['channel', 'master']);
     await exec.exec('flutter', ['upgrade']);
+  }
+  else if (useMaster && release.isGitCommitHash(version)) {
+    await exec.exec('git', ['checkout', version])
+    await exec.exec('flutter', ['config', '--enable-web'])
+    await exec.exec('flutter', ['precache', '--no-android', '--no-ios', '--web'])
   }
 }
 
