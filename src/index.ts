@@ -7,13 +7,13 @@ async function run() {
     const version = core.getInput('flutter-version') || '';
     const channel = core.getInput('channel') || 'stable';
 
-    if (channel == 'master' && version != '' && !isGitCommitHash(version)) {
-      core.setFailed(
-        '`flutter-version` must be a specific SHA1 git hash or be ommitted for the master channel.'
-      );
+    // if (channel == 'master' && version != '' && !isGitCommitHash(version)) {
+    //   core.setFailed(
+    //     '`flutter-version` must be a specific SHA1 git hash or be ommitted for the master channel.'
+    //   );
 
-      return;
-    }
+    //   return;
+    // }
 
     await installer.getFlutter(version, channel);
   } catch (error) {
