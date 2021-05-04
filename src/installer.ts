@@ -65,40 +65,39 @@ function tmpBaseDir(platform: string): string {
 const FLUTTER_GIT_REMOTE = 'https://github.com/flutter/flutter.git';
 
 async function findOrInstallFlutterFromGit(commit: string): Promise<string> {
-  // let toolPath = tc.find('flutter', commit);
-
-
-  // if (toolPath) {
-  //   core.debug(`Flutter found in tool cache ${toolPath}`);
-  //   return toolPath;
-  // }
-  // else {
-  //   core.debug(`Flutter not found in tool cache`);
-  // }
-
-  core.debug(`Cloning Flutter from ${FLUTTER_GIT_REMOTE}`);
-
   const flutterPath = 'flutter';
   const flutterExecPath = path.join(flutterPath, 'bin', 'flutter');
+  const flutterCacheKey = commit;
 
-  await io.mkdirP(flutterPath);
-
-
-  await exec.exec('git', ['clone', FLUTTER_GIT_REMOTE, flutterPath]);
-
-  if (commit != null) {
-    await exec.exec('git', ['checkout', commit], { cwd: flutterPath })
+  let toolPath = tc.find('flutter', commit);
+  if (toolPath) {
+    core.debug(`Flutter found in tool cache ${toolPath}`);
+    return toolPath;
+  }
+  else {
+    core.debug(`Flutter not found in tool cache`);
   }
 
-  await exec.exec(flutterExecPath, ['config', '--enable-web'])
-  await exec.exec(flutterExecPath, ['precache', '--no-android', '--no-ios', '--web'])
+  let cachedFlutter = await cache.restoreCache([flutterPath], flutterCacheKey)
 
-  core.debug(`Trying to save to cache foo2`);
-  await cache.saveCache([flutterPath], 'foo2');
+  if (cachedFlutter == undefined) {
+    core.debug(`Cloning Flutter from ${FLUTTER_GIT_REMOTE}`);
+    await io.mkdirP(flutterPath);
 
-  let cachedFlutterToolPath = await tc.cacheDir(flutterPath, 'flutter', commit);
+    await exec.exec('git', ['clone', FLUTTER_GIT_REMOTE, flutterPath]);
 
-  return cachedFlutterToolPath;
+    if (commit != null) {
+      await exec.exec('git', ['checkout', commit], { cwd: flutterPath })
+    }
+
+    await exec.exec(flutterExecPath, ['config', '--enable-web'])
+    await exec.exec(flutterExecPath, ['precache', '--no-android', '--no-ios', '--web'])
+
+    core.debug(`Trying to save to cache ${flutterCacheKey}`);
+    await cache.saveCache([flutterPath], flutterCacheKey);
+  }
+
+  return await tc.cacheDir(flutterPath, 'flutter', commit);
 }
 
 async function findOrInstallFlutterFromRelease(version: string, channel: string): Promise<string> {

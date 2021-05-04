@@ -149,28 +149,31 @@ function tmpBaseDir(platform) {
 const FLUTTER_GIT_REMOTE = 'https://github.com/flutter/flutter.git';
 function findOrInstallFlutterFromGit(commit) {
     return __awaiter(this, void 0, void 0, function* () {
-        // let toolPath = tc.find('flutter', commit);
-        // if (toolPath) {
-        //   core.debug(`Flutter found in tool cache ${toolPath}`);
-        //   return toolPath;
-        // }
-        // else {
-        //   core.debug(`Flutter not found in tool cache`);
-        // }
-        core.debug(`Cloning Flutter from ${FLUTTER_GIT_REMOTE}`);
         const flutterPath = 'flutter';
         const flutterExecPath = path.join(flutterPath, 'bin', 'flutter');
-        yield io.mkdirP(flutterPath);
-        yield exec.exec('git', ['clone', FLUTTER_GIT_REMOTE, flutterPath]);
-        if (commit != null) {
-            yield exec.exec('git', ['checkout', commit], { cwd: flutterPath });
+        const flutterCacheKey = commit;
+        let toolPath = tc.find('flutter', commit);
+        if (toolPath) {
+            core.debug(`Flutter found in tool cache ${toolPath}`);
+            return toolPath;
         }
-        yield exec.exec(flutterExecPath, ['config', '--enable-web']);
-        yield exec.exec(flutterExecPath, ['precache', '--no-android', '--no-ios', '--web']);
-        core.debug(`Trying to save to cache foo2`);
-        yield cache.saveCache([flutterPath], 'foo2');
-        let cachedFlutterToolPath = yield tc.cacheDir(flutterPath, 'flutter', commit);
-        return cachedFlutterToolPath;
+        else {
+            core.debug(`Flutter not found in tool cache`);
+        }
+        let cachedFlutter = yield cache.restoreCache([flutterPath], flutterCacheKey);
+        if (cachedFlutter == undefined) {
+            core.debug(`Cloning Flutter from ${FLUTTER_GIT_REMOTE}`);
+            yield io.mkdirP(flutterPath);
+            yield exec.exec('git', ['clone', FLUTTER_GIT_REMOTE, flutterPath]);
+            if (commit != null) {
+                yield exec.exec('git', ['checkout', commit], { cwd: flutterPath });
+            }
+            yield exec.exec(flutterExecPath, ['config', '--enable-web']);
+            yield exec.exec(flutterExecPath, ['precache', '--no-android', '--no-ios', '--web']);
+            core.debug(`Trying to save to cache ${flutterCacheKey}`);
+            yield cache.saveCache([flutterPath], flutterCacheKey);
+        }
+        return yield tc.cacheDir(flutterPath, 'flutter', commit);
     });
 }
 function findOrInstallFlutterFromRelease(version, channel) {
