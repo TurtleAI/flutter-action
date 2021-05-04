@@ -8,7 +8,8 @@ import * as release from './release';
 
 export async function getFlutter(
   version: string,
-  channel: string
+  channel: string,
+  platforms: string[]
 ): Promise<void> {
   if (channel == 'master') {
     let flutterPath = await findOrInstallFlutterFromGit(version);

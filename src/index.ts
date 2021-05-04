@@ -6,6 +6,7 @@ async function run() {
   try {
     const version = core.getInput('flutter-version') || '';
     const channel = core.getInput('channel') || 'stable';
+    const platforms = core.getInput('platforms').split(',')
 
     if (channel == 'master' && version != '' && !isGitCommitHash(version)) {
       core.setFailed(
@@ -15,7 +16,7 @@ async function run() {
       return;
     }
 
-    await installer.getFlutter(version, channel);
+    await installer.getFlutter(version, channel, platforms);
   } catch (error) {
     core.setFailed(error.message);
   }

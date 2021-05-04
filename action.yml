@@ -9,6 +9,10 @@ inputs:
     description: 'The Flutter build release channel'
     required: false
     default: 'stable'
+  platforms:
+    description: 'The platforms to enable and precache for flutter'
+    required: false
+    default: ''
 runs:
   using: 'node12'
   main: 'dist/index.js'

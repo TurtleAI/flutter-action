@@ -43,11 +43,12 @@ function run() {
         try {
             const version = core.getInput('flutter-version') || '';
             const channel = core.getInput('channel') || 'stable';
+            const platforms = core.getInput('platforms').split(',');
             if (channel == 'master' && version != '' && !release_1.isGitCommitHash(version)) {
                 core.setFailed('`flutter-version` must be a specific SHA1 git hash or be ommitted for the master channel.');
                 return;
             }
-            yield installer.getFlutter(version, channel);
+            yield installer.getFlutter(version, channel, platforms);
         }
         catch (error) {
             core.setFailed(error.message);
@@ -101,7 +102,7 @@ const tc = __importStar(__nccwpck_require__(6614));
 const fs = __importStar(__nccwpck_require__(5747));
 const path = __importStar(__nccwpck_require__(5622));
 const release = __importStar(__nccwpck_require__(1831));
-function getFlutter(version, channel) {
+function getFlutter(version, channel, platforms) {
     return __awaiter(this, void 0, void 0, function* () {
         if (channel == 'master') {
             let flutterPath = yield findOrInstallFlutterFromGit(version);
