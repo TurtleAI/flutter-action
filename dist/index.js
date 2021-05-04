@@ -103,54 +103,28 @@ const path = __importStar(__nccwpck_require__(5622));
 const release = __importStar(__nccwpck_require__(1831));
 function getFlutter(version, channel) {
     return __awaiter(this, void 0, void 0, function* () {
-        // const platform = release.getPlatform();
-        const useMaster = channel == 'master';
-        // const {
-        //   version: selected,
-        //   downloadUrl,
-        //   channel: validatedChannel
-        // } = await release.determineVersion(
-        //   version,
-        //   useMaster ? 'dev' : channel,
-        //   platform
-        // );
-        // if (!useMaster && channel !== validatedChannel) {
-        //   core.debug(`Channel was identified as ${validatedChannel}`);
-        // }
-        // let cleanver = useMaster
-        //   ? channel
-        //   : `${selected.replace('+', '-')}-${validatedChannel}`;
-        // let toolPath = tc.find('flutter', cleanver);
-        // if (toolPath) {
-        //   core.debug(`Tool found in cache ${toolPath}`);
-        // } else {
-        //   core.debug(`Downloading Flutter from Google storage ${downloadUrl}`);
-        //   const sdkFile = await tc.downloadTool(downloadUrl);
-        //   const sdkCache = await tmpDir(platform);
-        //   const sdkDir = await extract(sdkFile, sdkCache, path.basename(downloadUrl));
-        //   toolPath = await tc.cacheDir(sdkDir, 'flutter', cleanver);
-        // }
-        // core.exportVariable('FLUTTER_ROOT', toolPath);
-        let pubCachePath = process.env['PUB_CACHE'] || '';
-        // if (!pubCachePath) {
-        //   pubCachePath = path.join(toolPath, '.pub-cache');
-        //   core.exportVariable('PUB_CACHE', pubCachePath);
-        // }
-        // core.addPath(path.join(toolPath, 'bin'));
-        // core.addPath(path.join(toolPath, 'bin', 'cache', 'dart-sdk', 'bin'));
-        core.addPath(path.join(pubCachePath, 'bin'));
-        if (useMaster && version == '') {
-            yield exec.exec('flutter', ['channel', 'master']);
-            yield exec.exec('flutter', ['upgrade']);
+        if (channel == 'master') {
+            let flutterPath = yield findOrInstallFlutterFromGit(version);
+            setupEnvAndPaths(flutterPath);
         }
-        else if (useMaster && release.isGitCommitHash(version)) {
-            yield exec.exec('git', ['checkout', version]);
-            yield exec.exec('flutter', ['config', '--enable-web']);
-            yield exec.exec('flutter', ['precache', '--no-android', '--no-ios', '--web']);
+        else {
+            let flutterPath = yield findOrInstallFlutterFromRelease(version, channel);
+            setupEnvAndPaths(flutterPath);
         }
     });
 }
 exports.getFlutter = getFlutter;
+function setupEnvAndPaths(flutterPath) {
+    core.exportVariable('FLUTTER_ROOT', flutterPath);
+    let pubCachePath = process.env['PUB_CACHE'] || '';
+    if (!pubCachePath) {
+        pubCachePath = path.join(flutterPath, '.pub-cache');
+        core.exportVariable('PUB_CACHE', pubCachePath);
+    }
+    core.addPath(path.join(flutterPath, 'bin'));
+    core.addPath(path.join(flutterPath, 'bin', 'cache', 'dart-sdk', 'bin'));
+    core.addPath(path.join(pubCachePath, 'bin'));
+}
 function tmpBaseDir(platform) {
     let tempDirectory = process.env['RUNNER_TEMP'] || '';
     if (tempDirectory) {
@@ -169,6 +143,44 @@ function tmpBaseDir(platform) {
             break;
     }
     return path.join(baseLocation, 'actions', 'temp');
+}
+function findOrInstallFlutterFromGit(commit) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const flutterGitRemote = 'https://github.com/flutter/flutter.git';
+        let toolPath = tc.find('flutter', commit);
+        if (toolPath) {
+            core.debug(`Tool found in cache ${toolPath}`);
+            return toolPath;
+        }
+        else {
+            core.debug(`Cloning Flutter from ${flutterGitRemote}`);
+            const flutterRepoCache = yield tmpDir('flutter');
+            yield exec.exec('git', ['clone', 'https://github.com/flutter/flutter.git', flutterRepoCache]);
+            return yield tc.cacheDir(flutterRepoCache, 'flutter', commit);
+        }
+    });
+}
+function findOrInstallFlutterFromRelease(version, channel) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const platform = release.getPlatform();
+        const { version: selected, downloadUrl, channel: validatedChannel } = yield release.determineVersion(version, channel, platform);
+        if (channel !== validatedChannel) {
+            core.debug(`Channel was identified as ${validatedChannel}`);
+        }
+        let cleanVersion = `${selected.replace('+', '-')}-${validatedChannel}`;
+        let toolPath = tc.find('flutter', cleanVersion);
+        if (toolPath) {
+            core.debug(`Tool found in cache ${toolPath}`);
+            return toolPath;
+        }
+        else {
+            core.debug(`Downloading Flutter from Google storage ${downloadUrl}`);
+            const sdkFile = yield tc.downloadTool(downloadUrl);
+            const sdkCache = yield tmpDir(platform);
+            const sdkDir = yield extract(sdkFile, sdkCache, path.basename(downloadUrl));
+            return yield tc.cacheDir(sdkDir, 'flutter', cleanVersion);
+        }
+    });
 }
 function tmpDir(platform) {
     return __awaiter(this, void 0, void 0, function* () {
