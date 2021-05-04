@@ -144,20 +144,24 @@ function tmpBaseDir(platform) {
     }
     return path.join(baseLocation, 'actions', 'temp');
 }
+const FLUTTER_GIT_REMOTE = 'https://github.com/flutter/flutter.git';
 function findOrInstallFlutterFromGit(commit) {
     return __awaiter(this, void 0, void 0, function* () {
-        const flutterGitRemote = 'https://github.com/flutter/flutter.git';
         let toolPath = tc.find('flutter', commit);
         if (toolPath) {
             core.debug(`Tool found in cache ${toolPath}`);
             return toolPath;
         }
-        else {
-            core.debug(`Cloning Flutter from ${flutterGitRemote}`);
-            const flutterRepoCache = yield tmpDir('flutter');
-            yield exec.exec('git', ['clone', 'https://github.com/flutter/flutter.git', flutterRepoCache]);
-            return yield tc.cacheDir(flutterRepoCache, 'flutter', commit);
+        core.debug(`Cloning Flutter from ${FLUTTER_GIT_REMOTE}`);
+        const flutterRepoCache = yield tmpDir('flutter');
+        const flutterExecPath = path.join(flutterRepoCache, 'bin', 'flutter');
+        yield exec.exec('git', ['clone', FLUTTER_GIT_REMOTE, flutterRepoCache]);
+        if (commit != null) {
+            yield exec.exec('git', ['checkout', commit], { cwd: flutterRepoCache });
         }
+        yield exec.exec(flutterExecPath, ['config', '--enable-web']);
+        yield exec.exec(flutterExecPath, ['precache', '--no-android', '--no-ios', '--web']);
+        return yield tc.cacheDir(flutterRepoCache, 'flutter', commit);
     });
 }
 function findOrInstallFlutterFromRelease(version, channel) {
@@ -173,13 +177,11 @@ function findOrInstallFlutterFromRelease(version, channel) {
             core.debug(`Tool found in cache ${toolPath}`);
             return toolPath;
         }
-        else {
-            core.debug(`Downloading Flutter from Google storage ${downloadUrl}`);
-            const sdkFile = yield tc.downloadTool(downloadUrl);
-            const sdkCache = yield tmpDir(platform);
-            const sdkDir = yield extract(sdkFile, sdkCache, path.basename(downloadUrl));
-            return yield tc.cacheDir(sdkDir, 'flutter', cleanVersion);
-        }
+        core.debug(`Downloading Flutter from Google storage ${downloadUrl}`);
+        const sdkFile = yield tc.downloadTool(downloadUrl);
+        const sdkCache = yield tmpDir(platform);
+        const sdkDir = yield extract(sdkFile, sdkCache, path.basename(downloadUrl));
+        return yield tc.cacheDir(sdkDir, 'flutter', cleanVersion);
     });
 }
 function tmpDir(platform) {

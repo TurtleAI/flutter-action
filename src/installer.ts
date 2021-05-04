@@ -59,22 +59,34 @@ function tmpBaseDir(platform: string): string {
   return path.join(baseLocation, 'actions', 'temp');
 }
 
-async function findOrInstallFlutterFromGit(commit: string): Promise<string> {
-  const flutterGitRemote = 'https://github.com/flutter/flutter.git';
 
+const FLUTTER_GIT_REMOTE = 'https://github.com/flutter/flutter.git';
+
+async function findOrInstallFlutterFromGit(commit: string): Promise<string> {
   let toolPath = tc.find('flutter', commit);
+
   if (toolPath) {
     core.debug(`Tool found in cache ${toolPath}`);
     return toolPath;
-  } else {
-    core.debug(`Cloning Flutter from ${flutterGitRemote}`);
-    const flutterRepoCache = await tmpDir('flutter');
-    await exec.exec('git', ['clone', 'https://github.com/flutter/flutter.git', flutterRepoCache])
-    return await tc.cacheDir(flutterRepoCache, 'flutter', commit);
   }
+
+  core.debug(`Cloning Flutter from ${FLUTTER_GIT_REMOTE}`);
+  const flutterRepoCache = await tmpDir('flutter');
+  const flutterExecPath = path.join(flutterRepoCache, 'bin', 'flutter');
+  await exec.exec('git', ['clone', FLUTTER_GIT_REMOTE, flutterRepoCache]);
+
+  if (commit != null) {
+    await exec.exec('git', ['checkout', commit], { cwd: flutterRepoCache })
+  }
+
+  await exec.exec(flutterExecPath, ['config', '--enable-web'])
+  await exec.exec(flutterExecPath, ['precache', '--no-android', '--no-ios', '--web'])
+
+  return await tc.cacheDir(flutterRepoCache, 'flutter', commit);
 }
 
 async function findOrInstallFlutterFromRelease(version: string, channel: string): Promise<string> {
+
   const platform = release.getPlatform();
   const {
     version: selected,
@@ -93,19 +105,18 @@ async function findOrInstallFlutterFromRelease(version: string, channel: string)
   let cleanVersion = `${selected.replace('+', '-')}-${validatedChannel}`;
 
   let toolPath = tc.find('flutter', cleanVersion);
-
   if (toolPath) {
     core.debug(`Tool found in cache ${toolPath}`);
     return toolPath;
-  } else {
-    core.debug(`Downloading Flutter from Google storage ${downloadUrl}`);
-
-    const sdkFile = await tc.downloadTool(downloadUrl);
-    const sdkCache = await tmpDir(platform);
-    const sdkDir = await extract(sdkFile, sdkCache, path.basename(downloadUrl));
-
-    return await tc.cacheDir(sdkDir, 'flutter', cleanVersion);
   }
+
+  core.debug(`Downloading Flutter from Google storage ${downloadUrl}`);
+
+  const sdkFile = await tc.downloadTool(downloadUrl);
+  const sdkCache = await tmpDir(platform);
+  const sdkDir = await extract(sdkFile, sdkCache, path.basename(downloadUrl));
+
+  return await tc.cacheDir(sdkDir, 'flutter', cleanVersion);
 }
 
 async function tmpDir(platform: string): Promise<string> {
