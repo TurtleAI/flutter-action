@@ -93,12 +93,12 @@ async function findOrInstallFlutterFromGit(commit: string): Promise<string> {
   await exec.exec(flutterExecPath, ['config', '--enable-web'])
   await exec.exec(flutterExecPath, ['precache', '--no-android', '--no-ios', '--web'])
 
-  // let cachedToolPath = await tc.cacheDir(flutterPath, 'flutter', commit);
-
   core.debug(`Trying to save to cache foo`);
   cache.saveCache([flutterPath], 'foo');
 
-  return flutterPath;
+  let cachedFlutterToolPath = await tc.cacheDir(flutterPath, 'flutter', commit);
+
+  return cachedFlutterToolPath;
 }
 
 async function findOrInstallFlutterFromRelease(version: string, channel: string): Promise<string> {
