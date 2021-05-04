@@ -149,9 +149,14 @@ const FLUTTER_GIT_REMOTE = 'https://github.com/flutter/flutter.git';
 function findOrInstallFlutterFromGit(commit) {
     return __awaiter(this, void 0, void 0, function* () {
         let toolPath = tc.find('flutter', commit);
+        let allFlutterVersions = tc.findAllVersions('flutter');
+        core.debug('all flutter versions = ' + allFlutterVersions.join(','));
         if (toolPath) {
-            core.debug(`Tool found in cache ${toolPath}`);
+            core.debug(`Flutter found in cache ${toolPath}`);
             return toolPath;
+        }
+        else {
+            core.debug(`Flutter not found in cache`);
         }
         core.debug(`Cloning Flutter from ${FLUTTER_GIT_REMOTE}`);
         const flutterRepoCache = yield tmpDir('flutter');
