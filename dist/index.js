@@ -168,7 +168,7 @@ function findOrInstallFlutterFromGit(commit) {
         yield exec.exec(flutterExecPath, ['config', '--enable-web']);
         yield exec.exec(flutterExecPath, ['precache', '--no-android', '--no-ios', '--web']);
         core.debug(`Trying to save to cache foo`);
-        cache.saveCache([flutterPath], 'foo');
+        yield cache.saveCache([flutterPath], 'foo');
         let cachedFlutterToolPath = yield tc.cacheDir(flutterPath, 'flutter', commit);
         return cachedFlutterToolPath;
     });

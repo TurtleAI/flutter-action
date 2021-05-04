@@ -94,7 +94,7 @@ async function findOrInstallFlutterFromGit(commit: string): Promise<string> {
   await exec.exec(flutterExecPath, ['precache', '--no-android', '--no-ios', '--web'])
 
   core.debug(`Trying to save to cache foo`);
-  cache.saveCache([flutterPath], 'foo');
+  await cache.saveCache([flutterPath], 'foo');
 
   let cachedFlutterToolPath = await tc.cacheDir(flutterPath, 'flutter', commit);
 
