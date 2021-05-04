@@ -149,29 +149,28 @@ function tmpBaseDir(platform) {
 const FLUTTER_GIT_REMOTE = 'https://github.com/flutter/flutter.git';
 function findOrInstallFlutterFromGit(commit) {
     return __awaiter(this, void 0, void 0, function* () {
-        let toolPath = tc.find('flutter', commit);
-        let allFlutterVersions = tc.findAllVersions('flutter');
-        core.debug('all flutter versions = ' + allFlutterVersions.join(','));
-        if (toolPath) {
-            core.debug(`Flutter found in cache ${toolPath}`);
-            return toolPath;
-        }
-        else {
-            core.debug(`Flutter not found in cache`);
-        }
+        // let toolPath = tc.find('flutter', commit);
+        // if (toolPath) {
+        //   core.debug(`Flutter found in tool cache ${toolPath}`);
+        //   return toolPath;
+        // }
+        // else {
+        //   core.debug(`Flutter not found in tool cache`);
+        // }
         core.debug(`Cloning Flutter from ${FLUTTER_GIT_REMOTE}`);
-        const flutterRepoCache = yield tmpDir('flutter');
-        const flutterExecPath = path.join(flutterRepoCache, 'bin', 'flutter');
-        yield exec.exec('git', ['clone', FLUTTER_GIT_REMOTE, flutterRepoCache]);
+        const flutterPath = 'flutter';
+        const flutterExecPath = path.join(flutterPath, 'bin', 'flutter');
+        yield io.mkdirP(flutterPath);
+        yield exec.exec('git', ['clone', FLUTTER_GIT_REMOTE, flutterPath]);
         if (commit != null) {
-            yield exec.exec('git', ['checkout', commit], { cwd: flutterRepoCache });
+            yield exec.exec('git', ['checkout', commit], { cwd: flutterPath });
         }
         yield exec.exec(flutterExecPath, ['config', '--enable-web']);
         yield exec.exec(flutterExecPath, ['precache', '--no-android', '--no-ios', '--web']);
-        let cachedToolPath = yield tc.cacheDir(flutterRepoCache, 'flutter', commit);
+        // let cachedToolPath = await tc.cacheDir(flutterPath, 'flutter', commit);
         core.debug(`Trying to save to cache foo`);
-        cache.saveCache([cachedToolPath], 'foo');
-        return cachedToolPath;
+        cache.saveCache([flutterPath], 'foo');
+        return flutterPath;
     });
 }
 function findOrInstallFlutterFromRelease(version, channel) {

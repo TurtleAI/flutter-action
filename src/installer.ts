@@ -65,37 +65,40 @@ function tmpBaseDir(platform: string): string {
 const FLUTTER_GIT_REMOTE = 'https://github.com/flutter/flutter.git';
 
 async function findOrInstallFlutterFromGit(commit: string): Promise<string> {
-  let toolPath = tc.find('flutter', commit);
+  // let toolPath = tc.find('flutter', commit);
 
-  let allFlutterVersions = tc.findAllVersions('flutter');
-  core.debug('all flutter versions = ' + allFlutterVersions.join(','));
 
-  if (toolPath) {
-    core.debug(`Flutter found in cache ${toolPath}`);
-    return toolPath;
-  }
-  else {
-    core.debug(`Flutter not found in cache`);
-  }
+  // if (toolPath) {
+  //   core.debug(`Flutter found in tool cache ${toolPath}`);
+  //   return toolPath;
+  // }
+  // else {
+  //   core.debug(`Flutter not found in tool cache`);
+  // }
 
   core.debug(`Cloning Flutter from ${FLUTTER_GIT_REMOTE}`);
-  const flutterRepoCache = await tmpDir('flutter');
-  const flutterExecPath = path.join(flutterRepoCache, 'bin', 'flutter');
-  await exec.exec('git', ['clone', FLUTTER_GIT_REMOTE, flutterRepoCache]);
+
+  const flutterPath = 'flutter';
+  const flutterExecPath = path.join(flutterPath, 'bin', 'flutter');
+
+  await io.mkdirP(flutterPath);
+
+
+  await exec.exec('git', ['clone', FLUTTER_GIT_REMOTE, flutterPath]);
 
   if (commit != null) {
-    await exec.exec('git', ['checkout', commit], { cwd: flutterRepoCache })
+    await exec.exec('git', ['checkout', commit], { cwd: flutterPath })
   }
 
   await exec.exec(flutterExecPath, ['config', '--enable-web'])
   await exec.exec(flutterExecPath, ['precache', '--no-android', '--no-ios', '--web'])
 
-  let cachedToolPath = await tc.cacheDir(flutterRepoCache, 'flutter', commit);
+  // let cachedToolPath = await tc.cacheDir(flutterPath, 'flutter', commit);
 
   core.debug(`Trying to save to cache foo`);
-  cache.saveCache([cachedToolPath], 'foo');
+  cache.saveCache([flutterPath], 'foo');
 
-  return cachedToolPath;
+  return flutterPath;
 }
 
 async function findOrInstallFlutterFromRelease(version: string, channel: string): Promise<string> {
