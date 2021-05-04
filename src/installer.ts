@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import * as io from '@actions/io';
 import * as exec from '@actions/exec';
 import * as tc from '@actions/tool-cache';
+import * as cache from '@actions/cache';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as release from './release';
@@ -89,7 +90,12 @@ async function findOrInstallFlutterFromGit(commit: string): Promise<string> {
   await exec.exec(flutterExecPath, ['config', '--enable-web'])
   await exec.exec(flutterExecPath, ['precache', '--no-android', '--no-ios', '--web'])
 
-  return await tc.cacheDir(flutterRepoCache, 'flutter', commit);
+  let cachedToolPath = await tc.cacheDir(flutterRepoCache, 'flutter', commit);
+
+  core.debug(`Trying to save to cache foo`);
+  cache.saveCache([cachedToolPath], 'foo');
+
+  return cachedToolPath;
 }
 
 async function findOrInstallFlutterFromRelease(version: string, channel: string): Promise<string> {
